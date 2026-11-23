@@ -62,6 +62,25 @@ class SecurityApiTest extends ApiTestSupport {
     }
 
     @Test
+    void swaggerDocsArePublicAndHideLoginUserParameter() throws Exception {
+        String docs = mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("wbw 작문 플랫폼 API"))
+                .andExpect(jsonPath("$.paths['/api/documents/{documentId}'].put").exists())
+                .andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(docs).doesNotContain("\"userId\"");
+        mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
+    }
+
+    @Test
+    void swaggerLoginStartsGoogleLogin() throws Exception {
+        mvc.perform(get("/swagger-login"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .redirectedUrl("/oauth2/authorization/google"));
+    }
+
+    @Test
     void fontsArePublic() throws Exception {
         mvc.perform(get("/api/fonts"))
                 .andExpect(status().isOk())

@@ -1,5 +1,7 @@
 package com.wbw.pdf;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.wbw.auth.LoginUser;
 import jakarta.validation.Valid;
 import org.springframework.http.ContentDisposition;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 
 @RestController
+@Tag(name = "글")
 public class PdfController {
 
     private final PdfService pdfService;
@@ -22,6 +25,7 @@ public class PdfController {
         this.pdfService = pdfService;
     }
 
+    @Operation(summary = "PDF 내보내기", description = "모든 옵션 선택. 응답은 application/pdf 파일")
     @PostMapping("/api/documents/{documentId}/pdf")
     public ResponseEntity<byte[]> export(@LoginUser Long userId, @PathVariable Long documentId,
                                          @Valid @RequestBody(required = false) PdfOptions options) {

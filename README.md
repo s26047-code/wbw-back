@@ -46,6 +46,11 @@ gradlew.bat bootRun
 - 실행 후 확인: http://localhost:8080/actuator/health → `{"status":"UP"}`
 - 로그인 확인: http://localhost:8080/oauth2/authorization/google 로 들어가 로그인 → `FRONTEND_URL` 로 돌아옵니다.
 
+### ⑥ Swagger (API 문서·테스트)
+- http://localhost:8080/swagger-ui.html
+- 같은 브라우저에서 http://localhost:8080/swagger-login 으로 구글 로그인하면 Swagger로 돌아오고, 이후 모든 API를 **Try it out** 으로 호출할 수 있습니다.
+- 운영에서 숨기려면 `.env` 에 `SWAGGER_ENABLED=false`
+
 ## 2. 배포
 
 ### 방법 A: 서버에 Docker로 배포 (권장)

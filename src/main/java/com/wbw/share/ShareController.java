@@ -1,5 +1,7 @@
 package com.wbw.share;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.wbw.auth.LoginUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@Tag(name = "공유 (작성자)", description = "공유 링크 관리")
 public class ShareController {
 
     private final ShareService shareService;
@@ -23,11 +26,13 @@ public class ShareController {
         this.shareService = shareService;
     }
 
+    @Operation(summary = "공유 링크 목록")
     @GetMapping("/api/documents/{documentId}/shares")
     public List<ShareDtos.ShareResponse> list(@LoginUser Long userId, @PathVariable Long documentId) {
         return shareService.list(userId, documentId);
     }
 
+    @Operation(summary = "공유 링크 생성", description = "password 생략 시 공개 공유. expiresAt 생략 시 만료 없음")
     @PostMapping("/api/documents/{documentId}/shares")
     @ResponseStatus(HttpStatus.CREATED)
     public ShareDtos.ShareResponse create(@LoginUser Long userId, @PathVariable Long documentId,
@@ -35,12 +40,14 @@ public class ShareController {
         return shareService.create(userId, documentId, request);
     }
 
+    @Operation(summary = "공유 링크 수정", description = "enabled, password, removePassword, expiresAt, clearExpiresAt 중 보낸 값만 변경")
     @PatchMapping("/api/shares/{shareId}")
     public ShareDtos.ShareResponse update(@LoginUser Long userId, @PathVariable Long shareId,
                                           @Valid @RequestBody ShareDtos.UpdateShareRequest request) {
         return shareService.update(userId, shareId, request);
     }
 
+    @Operation(summary = "공유 링크 삭제")
     @DeleteMapping("/api/shares/{shareId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@LoginUser Long userId, @PathVariable Long shareId) {

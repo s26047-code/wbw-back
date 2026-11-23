@@ -4,6 +4,8 @@
 - 모든 요청/응답은 JSON (`Content-Type: application/json`), 시간은 ISO-8601 UTC 문자열 (`2026-11-23T11:00:00.123456Z`)
 - 인증: 구글 로그인 후 **세션 쿠키**(`WBW_SESSION`). fetch 시 `credentials: 'include'` 필수
 
+> 💡 **Swagger UI**: 서버 실행 후 `/swagger-ui.html` 에서 모든 API를 보고 직접 호출할 수 있습니다. 로그인은 같은 브라우저에서 `/swagger-login` 접속.
+
 ## 0. 연동 전에 꼭 알아야 할 것
 
 ### 로그인 / 로그아웃

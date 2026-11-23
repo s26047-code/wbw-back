@@ -47,6 +47,20 @@ server:
         same-site: ${SESSION_COOKIE_SAME_SITE:lax}
         name: WBW_SESSION
 
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /swagger-ui.html
+    csrf:
+      enabled: true          # XSRF-TOKEN 쿠키를 X-XSRF-TOKEN 헤더로 자동 전송
+    with-credentials: true
+    operations-sorter: method
+    display-request-duration: true
+    try-it-out-enabled: true
+  default-produces-media-type: application/json
+
 management:
   endpoints:
     web:

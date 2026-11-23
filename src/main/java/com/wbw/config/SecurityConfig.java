@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wbw.auth.GoogleOidcUserService;
 import com.wbw.auth.SpaCsrfTokenRequestHandler;
 import com.wbw.common.ErrorCode;
+import com.wbw.config.swagger.SwaggerLoginController;
 import com.wbw.common.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -18,7 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -45,8 +47,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, GoogleOidcUserService oidcUserService) throws Exception {
-        SimpleUrlAuthenticationSuccessHandler success = new SimpleUrlAuthenticationSuccessHandler(props.frontendBaseUrl() + "/");
-        success.setAlwaysUseDefaultTargetUrl(true);
+        // 로그인 성공 시 프론트엔드로 이동. Swagger에서 로그인을 시작했다면 Swagger로 돌아간다.
+        AuthenticationSuccessHandler success = (request, response, authentication) -> {
+            HttpSession session = request.getSession(false);
+            String target = props.frontendBaseUrl() + "/";
+            if (session != null && Boolean.TRUE.equals(session.getAttribute(SwaggerLoginController.RETURN_TO_SWAGGER))) {
+                session.removeAttribute(SwaggerLoginController.RETURN_TO_SWAGGER);
+                target = request.getContextPath() + "/swagger-ui.html";
+            }
+            response.sendRedirect(target);
+        };
         SimpleUrlAuthenticationFailureHandler failure =
                 new SimpleUrlAuthenticationFailureHandler(props.frontendBaseUrl() + "/login?error=oauth");
 
@@ -58,6 +68,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/public/**", "/api/csrf", "/api/fonts").permitAll()
                         .requestMatchers("/actuator/health", "/error").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-login").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .anyRequest().denyAll())
