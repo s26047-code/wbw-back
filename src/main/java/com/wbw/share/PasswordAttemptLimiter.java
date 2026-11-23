@@ -1,6 +1,7 @@
 package com.wbw.share;
 
 import com.wbw.config.AppProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -24,6 +25,7 @@ public class PasswordAttemptLimiter {
     private final Duration lockDuration;
     private final Clock clock;
 
+    @Autowired
     public PasswordAttemptLimiter(AppProperties props) {
         this(props.share().maxPasswordAttempts(), Duration.ofMinutes(props.share().lockMinutes()), Clock.systemUTC());
     }
