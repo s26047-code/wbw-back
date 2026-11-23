@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: wbw-backend
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/wbw?serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:wbw}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none   # 스키마는 Flyway가 관리 (자동 생성/삭제 금지)
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    clean-disabled: true   # 실수로 DB를 비우는 일이 없도록 차단
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope: openid,profile,email
+  servlet:
+    multipart:
+      enabled: false
+  mvc:
+    problemdetails:
+      enabled: false
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework   # 리버스 프록시(HTTPS) 뒤에서 올바른 리다이렉트 URI 생성
+  tomcat:
+    max-http-form-post-size: 10MB
+  servlet:
+    session:
+      timeout: 14d
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:false}
+        same-site: ${SESSION_COOKIE_SAME_SITE:lax}
+        name: WBW_SESSION
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+app:
+  # 로그인 성공/실패 후 돌아갈 프론트엔드 주소, 공유 링크 생성 기준 주소
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  document:
+    max-content-bytes: 5242880    # 글 1개 본문(JSON) 최대 5MB
+    max-title-length: 200
+  share:
+    max-password-attempts: 5
+    lock-minutes: 10
+  pdf:
+    font-dir: ${PDF_FONT_DIR:./fonts}
+
+logging:
+  level:
+    root: INFO

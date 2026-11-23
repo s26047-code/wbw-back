@@ -1,0 +1,34 @@
+# 서버 배포용: MySQL + 백엔드를 함께 실행합니다.
+# 사용법: .env 작성 후 `docker compose up -d --build`
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wbw
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_URL: jdbc:mysql://db:3306/wbw?serverTimezone=UTC&characterEncoding=UTF-8
+    ports:
+      - "127.0.0.1:8080:8080"   # 외부 공개는 앞단의 HTTPS 리버스 프록시(Nginx/Caddy)를 통해서만
+
+volumes:
+  db-data:
