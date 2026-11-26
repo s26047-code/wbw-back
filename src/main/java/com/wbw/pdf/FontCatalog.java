@@ -19,7 +19,7 @@ import java.util.Optional;
  * PDF에는 고정 굵기(static) TTF 파일을 직접 임베드한다. (WOFF2·가변 글꼴·CFF 기반 OTF/TTC는 PDF 엔진에서 한글이 깨질 수 있어 사용하지 않음)
  * 글꼴 파일은 아래 순서로 찾는다.
  * <ol>
- *   <li>app.pdf.font-dir (기본 ./fonts) — Google Fonts에서 받은 파일</li>
+ *   <li>app.pdf.font-dir (기본 ./fonts) — Google Fonts·Pretendard 배포본에서 받은 파일 (서버는 배포 스크립트가 Pretendard 자동 설치)</li>
  *   <li>/usr/share/fonts/truetype/nanum — 리눅스 서버의 fonts-nanum 패키지 (sudo apt install fonts-nanum)</li>
  *   <li>Windows 글꼴 폴더 — 로컬 개발 PC에 나눔 글꼴이 설치된 경우</li>
  * </ol>
@@ -37,6 +37,8 @@ public class FontCatalog {
     }
 
     private static final List<FontFace> FONTS = List.of(
+            new FontFace("Pretendard", "프리텐다드 (Pretendard)", "sans-serif",
+                    List.of("Pretendard-Regular.ttf"), List.of("Pretendard-Bold.ttf")),
             new FontFace("Noto Serif KR", "본명조 (Noto Serif KR)", "serif",
                     List.of("NotoSerifKR-Regular.ttf"), List.of("NotoSerifKR-Bold.ttf")),
             new FontFace("Noto Sans KR", "본고딕 (Noto Sans KR)", "sans-serif",

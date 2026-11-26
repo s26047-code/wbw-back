@@ -105,7 +105,8 @@ server: { proxy: { '/api': API, '/oauth2': API, '/login/oauth2': API, '/swagger-
 [{ "family": "Noto Serif KR", "label": "본명조 (Noto Serif KR)", "generic": "serif", "pdfAvailable": true }, ...]
 ```
 `family` 값을 CSS `font-family` 와 TipTap `textStyle.fontFamily` 에 그대로 사용하세요. 웹폰트(woff2)는 프론트에서 로드합니다.
-제공 글꼴: Noto Serif KR, Noto Sans KR, Nanum Myeongjo, Nanum Gothic, Gowun Batang, Gowun Dodum
+제공 글꼴: Pretendard, Noto Serif KR, Noto Sans KR, Nanum Myeongjo, Nanum Gothic, Gowun Batang, Gowun Dodum
+(학교 서버 PDF 사용 가능: Pretendard, 나눔명조, 나눔고딕. 나머지는 PDF에서 같은 계열 글꼴로 대체)
 
 ## 3. 폴더
 
@@ -185,6 +186,9 @@ server: { proxy: { '/api': API, '/oauth2': API, '/login/oauth2': API, '/swagger-
 ### `DELETE /api/documents/{id}` — 204
 글과 그 글의 공유 링크가 함께 삭제됩니다.
 
+### `POST /api/documents/{id}/pdf/html` — PDF용 HTML 보기 (레이아웃 확인용)
+PDF 내보내기와 같은 본문을 보내면, PDF를 만들 때 쓰는 HTML/CSS를 그대로 돌려줍니다. 화면과 PDF의 줄 간격·글꼴이 다를 때 실제 적용된 스타일 확인용입니다.
+
 ### `POST /api/documents/{id}/pdf` — PDF 다운로드
 ```json
 {
@@ -252,8 +256,8 @@ PATCH 본문 (보낸 값만 변경): `enabled`(bool), `password`(설정·변경)
 | 글자 크기 | mark `textStyle`, attr `fontSize` | `"18px"` (또는 pt, 숫자는 px로 간주) |
 | 자간 | mark `textStyle`, attr `letterSpacing` | `"0.05em"` (또는 px) |
 | 글자색 | mark `textStyle`, attr `color` | `"#333333"` |
-| 줄 간격 | node `paragraph`/`heading`, attr `lineHeight` | 숫자 배수 `1.8` |
-| 문단 간격 | node `paragraph`/`heading`, attr `paragraphSpacing` | 숫자 em `1.2` (문단 아래 여백) |
+| 줄 간격 | node `paragraph`/`heading`, attr `lineHeight` | 숫자 배수 `1.6` (권장). `"160%"`, `"28px"` 도 가능 |
+| 문단 간격 | node `paragraph`/`heading`, attr `paragraphSpacing` | 숫자 em `0.8` (권장, 문단 **아래** 여백). `"12px"` 도 가능, 단위 없는 숫자가 5보다 크면 px로 해석 |
 | 정렬 | node attr `textAlign` | left / center / right / justify |
 | 쪽 나눔 (PDF) | node `paragraph`, attr `pageBreak` | `true` 면 PDF에서 이 문단 다음부터 새 쪽. 내용 없는 문단이면 빈 줄 없이 쪽만 넘김 |
 

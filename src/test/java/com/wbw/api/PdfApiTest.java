@@ -61,6 +61,19 @@ class PdfApiTest extends ApiTestSupport {
     }
 
     @Test
+    void previewHtmlShowsAppliedParagraphStyles() throws Exception {
+        long id = createDoc();
+        mvc.perform(postAs(ALICE, "/api/documents/{id}/pdf/html", Map.of("pageSize", "A5"), id))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/html")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(containsString("line-height:2;")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(containsString("@page{size:148mm 210mm;")));
+        mvc.perform(postAs(BOB, "/api/documents/{id}/pdf/html", Map.of(), id)).andExpect(status().isNotFound());
+    }
+
+    @Test
     void cannotExportOthersDocument() throws Exception {
         long id = createDoc();
         mvc.perform(postAs(BOB, "/api/documents/{id}/pdf", Map.of(), id)).andExpect(status().isNotFound());

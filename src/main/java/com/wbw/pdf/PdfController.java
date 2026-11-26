@@ -38,6 +38,14 @@ public class PdfController {
                 .body(file.bytes());
     }
 
+    @Operation(summary = "PDF용 HTML 보기 (레이아웃 확인용)",
+            description = "PDF를 만들 때 쓰는 HTML/CSS를 그대로 돌려줍니다. 줄 간격·글꼴이 화면과 다를 때 실제 적용된 스타일을 확인하는 용도. 요청 본문은 PDF 내보내기와 같습니다.")
+    @PostMapping(value = "/api/documents/{documentId}/pdf/html", produces = "text/html;charset=UTF-8")
+    public String previewHtml(@LoginUser Long userId, @PathVariable Long documentId,
+                              @Valid @RequestBody(required = false) PdfOptions options) {
+        return pdfService.previewHtml(userId, documentId, options);
+    }
+
     static String safeFileName(String title) {
         String name = title == null ? "" : title.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "").strip();
         if (name.isEmpty()) {

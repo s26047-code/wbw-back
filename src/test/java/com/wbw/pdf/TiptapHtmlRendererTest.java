@@ -79,6 +79,27 @@ class TiptapHtmlRendererTest {
     }
 
     @Test
+    void paragraphLineHeightAndSpacingAcceptFrontendFormats() throws Exception {
+        // 프론트 기본 형식: lineHeight 숫자(배수), paragraphSpacing 숫자(em)
+        assertThat(render("""
+                {"type":"doc","content":[{"type":"paragraph","attrs":{"lineHeight":1.6,"paragraphSpacing":0.8},
+                 "content":[{"type":"text","text":"a"}]}]}
+                """)).isEqualTo("<p style=\"line-height:1.6;margin-bottom:0.8em;\">a</p>");
+
+        assertThat(TiptapHtmlRenderer.lineHeightCss(mapper.readTree("\"1.6\""))).isEqualTo("1.6");
+        assertThat(TiptapHtmlRenderer.lineHeightCss(mapper.readTree("\"160%\""))).isEqualTo("1.6");
+        assertThat(TiptapHtmlRenderer.lineHeightCss(mapper.readTree("\"28px\""))).isEqualTo("28px");
+        assertThat(TiptapHtmlRenderer.lineHeightCss(mapper.readTree("10"))).isNull();
+        assertThat(TiptapHtmlRenderer.lineHeightCss(mapper.readTree("\"1;color:red\""))).isNull();
+
+        assertThat(TiptapHtmlRenderer.paragraphSpacingCss(mapper.readTree("0"))).isEqualTo("0em");
+        assertThat(TiptapHtmlRenderer.paragraphSpacingCss(mapper.readTree("1.25"))).isEqualTo("1.25em");
+        assertThat(TiptapHtmlRenderer.paragraphSpacingCss(mapper.readTree("12"))).isEqualTo("12px");
+        assertThat(TiptapHtmlRenderer.paragraphSpacingCss(mapper.readTree("\"9pt\""))).isEqualTo("9pt");
+        assertThat(TiptapHtmlRenderer.paragraphSpacingCss(mapper.readTree("-1"))).isNull();
+    }
+
+    @Test
     void cssLengthValidation() throws Exception {
         assertThat(TiptapHtmlRenderer.cssLength(mapper.readTree("18"), "px", 6, 96, 6, 72, 0.3, 6)).isEqualTo("18px");
         assertThat(TiptapHtmlRenderer.cssLength(mapper.readTree("\"12pt\""), "px", 6, 96, 6, 72, 0.3, 6)).isEqualTo("12pt");

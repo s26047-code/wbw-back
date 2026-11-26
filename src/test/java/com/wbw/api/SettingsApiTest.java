@@ -45,6 +45,15 @@ class SettingsApiTest extends ApiTestSupport {
     }
 
     @Test
+    void pretendardCanBeSavedAsDefaultFont() throws Exception {
+        Map<String, Object> m = valid();
+        m.put("fontFamily", "Pretendard");
+        mvc.perform(putAs(ALICE, "/api/settings", m))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fontFamily").value("Pretendard"));
+    }
+
+    @Test
     void customThemeRequiresColors() throws Exception {
         Map<String, Object> m = valid();
         m.put("theme", "CUSTOM");
