@@ -49,6 +49,14 @@ public class PdfService {
         return new PdfFile(doc.getTitle(), render(html));
     }
 
+    /** PDF를 만들 때 쓰는 XHTML을 그대로 돌려준다. (화면과 PDF 레이아웃 비교용) */
+    @Transactional
+    public String previewHtml(Long userId, Long documentId, PdfOptions options) {
+        PdfOptions opts = options == null ? PdfOptions.defaults() : options;
+        Document doc = documentService.getOwned(userId, documentId);
+        return buildHtml(doc, settingsService.get(userId), opts);
+    }
+
     String buildHtml(Document doc, UserSettings settings, PdfOptions opts) {
         TiptapHtmlRenderer renderer = new TiptapHtmlRenderer(this::cssFontFamily);
         String body = renderer.renderBody(documentService.contentOf(doc));
@@ -117,11 +125,17 @@ public class PdfService {
         if (selected.isEmpty()) {
             return null;
         }
+        // 선택한 글꼴 → 같은 계열(고딕/명조)의 설치된 글꼴 → 나머지 설치된 글꼴 순으로 대체
+        FontCatalog.FontFace chosen = selected.get();
         List<String> families = new ArrayList<>();
-        families.add(selected.get().family());
-        for (FontCatalog.FontFace face : fontCatalog.all()) {
-            if (!face.family().equals(selected.get().family()) && fontCatalog.regularPath(face).isPresent()) {
-                families.add(face.family());
+        families.add(chosen.family());
+        for (boolean sameGeneric : new boolean[]{true, false}) {
+            for (FontCatalog.FontFace face : fontCatalog.all()) {
+                if (!face.family().equals(chosen.family())
+                        && face.generic().equals(chosen.generic()) == sameGeneric
+                        && fontCatalog.regularPath(face).isPresent()) {
+                    families.add(face.family());
+                }
             }
         }
         StringBuilder css = new StringBuilder();
