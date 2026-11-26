@@ -9,6 +9,7 @@ PDF 내보내기에서 한글을 표시하려면 이 폴더에 아래 TTF 파일
 
 | 파일명 | 받는 곳 |
 |---|---|
+| Pretendard-Regular.ttf, Pretendard-Bold.ttf | https://github.com/orioncactus/pretendard/releases (zip 안의 고정 굵기 TTF, 서버는 배포 스크립트가 자동 설치) |
 | NotoSerifKR-Regular.ttf, NotoSerifKR-Bold.ttf | https://fonts.google.com/noto/specimen/Noto+Serif+KR (압축 해제 후 `static` 폴더) |
 | NotoSansKR-Regular.ttf, NotoSansKR-Bold.ttf | https://fonts.google.com/noto/specimen/Noto+Sans+KR (`static` 폴더) |
 | NanumMyeongjo-Regular.ttf, NanumMyeongjo-Bold.ttf | https://fonts.google.com/specimen/Nanum+Myeongjo |
