@@ -108,3 +108,18 @@ src/main/java/com/wbw/
 - **세션은 서버 메모리에 저장**됩니다. 서버를 재시작하면 다시 로그인해야 하고, 서버 여러 대로 늘리려면 Spring Session(JDBC/Redis)을 추가해야 합니다.
 - 공유 비밀번호 시도 제한도 메모리 기반이며 서버 1대를 전제로 합니다.
 - 글 삭제와 폴더 삭제는 영구 삭제입니다(휴지통 없음).
+
+## 5. CI/CD (GitHub Actions)
+| 워크플로 | 언제 | 하는 일 |
+|---|---|---|
+| `CI` | `develop`·`main` 대상 PR, `main` 푸시 | 테스트 → Discord 알림 |
+| `CD (개발 서버)` | `develop` 푸시(머지) | 테스트 → 학교 서버 배포 → Discord 알림 |
+
+필요한 GitHub Secrets (Settings → Secrets and variables → Actions)
+| 이름 | 필수 | 설명 |
+|---|---|---|
+| `DEPLOY_SSH_KEY` | ✅ | 서버 배포용 SSH 개인키 (ed25519) |
+| `DISCORD_WEBHOOK_URL` | ✅ | 백엔드 알림 채널(back) 웹훅 |
+| `DISCORD_DEPLOY_WEBHOOK_URL` | 선택 | 배포 알림만 받을 채널(dev) 웹훅. 없으면 back 채널로 보냄 |
+
+수동 배포가 필요하면 Actions 탭에서 `CD (개발 서버)` → **Run workflow**, 또는 PC에서 `deploy\deploy.ps1`.
