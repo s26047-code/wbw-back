@@ -115,7 +115,7 @@ jobs:
       - name: 알림 전송
         env:
           # 배포 전용 채널(dev)이 있으면 그쪽으로, 없으면 back 채널로
-          WEBHOOK_URL: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL || secrets.DISCORD_WEBHOOK_URL }}
+          WEBHOOK_URL: ${{ secrets.DISCORD_DEV_WEBHOOK_URL || secrets.DISCORD_BACK_WEBHOOK_URL }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           BUILD_RESULT: ${{ needs.build.result }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}

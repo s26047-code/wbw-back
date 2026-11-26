@@ -119,7 +119,7 @@ src/main/java/com/wbw/
 | 이름 | 필수 | 설명 |
 |---|---|---|
 | `DEPLOY_SSH_KEY` | ✅ | 서버 배포용 SSH 개인키 (ed25519) |
-| `DISCORD_WEBHOOK_URL` | ✅ | 백엔드 알림 채널(back) 웹훅 |
-| `DISCORD_DEPLOY_WEBHOOK_URL` | 선택 | 배포 알림만 받을 채널(dev) 웹훅. 없으면 back 채널로 보냄 |
+| `DISCORD_BACK_WEBHOOK_URL` | ✅ | 백엔드 알림 채널(back) 웹훅 |
+| `DISCORD_DEV_WEBHOOK_URL` | 선택 | 배포 알림만 받을 채널(dev) 웹훅. 없으면 back 채널로 보냄 |
 
 수동 배포가 필요하면 Actions 탭에서 `CD (개발 서버)` → **Run workflow**, 또는 PC에서 `deploy\deploy.ps1`.
