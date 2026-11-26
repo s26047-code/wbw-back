@@ -65,7 +65,8 @@ class SecurityApiTest extends ApiTestSupport {
     void fontsArePublic() throws Exception {
         mvc.perform(get("/api/fonts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].family").value("Noto Serif KR"));
+                .andExpect(jsonPath("$[0].family").value("Pretendard"))
+                .andExpect(jsonPath("$[0].generic").value("sans-serif"));
     }
 
     @Test
