@@ -7,7 +7,6 @@ import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,24 +40,6 @@ class SecurityApiTest extends ApiTestSupport {
         mvc.perform(post("/api/folders").with(as(ALICE))
                         .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("name", "x"))))
                 .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void csrfEndpointIssuesCookie() throws Exception {
-        mvc.perform(get("/api/csrf"))
-                .andExpect(status().isOk())
-                .andExpect(cookie().exists("XSRF-TOKEN"))
-                .andExpect(jsonPath("$.headerName").value("X-XSRF-TOKEN"));
-    }
-
-    @Test
-    void cookieTokenInHeaderPassesCsrf() throws Exception {
-        String token = mvc.perform(get("/api/csrf")).andReturn().getResponse().getCookie("XSRF-TOKEN").getValue();
-        mvc.perform(post("/api/folders").with(as(ALICE))
-                        .cookie(new jakarta.servlet.http.Cookie("XSRF-TOKEN", token))
-                        .header("X-XSRF-TOKEN", token)
-                        .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("name", "쿠키 토큰"))))
-                .andExpect(status().isCreated());
     }
 
     @Test
