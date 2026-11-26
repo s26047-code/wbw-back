@@ -9,6 +9,9 @@ import com.wbw.common.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -19,7 +22,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -29,20 +33,31 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
     private static final RequestMatcher API = request -> pathOf(request).startsWith("/api/");
 
     private final AppProperties props;
     private final ObjectMapper objectMapper;
 
-    public SecurityConfig(AppProperties props, ObjectMapper objectMapper) {
+    private final String cookieSameSite;
+    private final boolean cookieSecure;
+
+    public SecurityConfig(AppProperties props, ObjectMapper objectMapper,
+                          @Value("${server.servlet.session.cookie.same-site:lax}") String cookieSameSite,
+                          @Value("${server.servlet.session.cookie.secure:false}") boolean cookieSecure) {
         this.props = props;
         this.objectMapper = objectMapper;
+        this.cookieSameSite = cookieSameSite;
+        this.cookieSecure = cookieSecure;
     }
 
     @Bean
@@ -57,13 +72,23 @@ public class SecurityConfig {
             }
             response.sendRedirect(target);
         };
-        SimpleUrlAuthenticationFailureHandler failure =
-                new SimpleUrlAuthenticationFailureHandler(props.frontendBaseUrl() + "/login?error=oauth");
+        // 로그인 실패 원인을 로그에 남기고, 프론트에도 오류 코드를 전달한다. (예: /login?error=oauth&reason=invalid_client)
+        AuthenticationFailureHandler failure = (request, response, exception) -> {
+            String reason = exception instanceof OAuth2AuthenticationException oauth
+                    ? oauth.getError().getErrorCode() : exception.getClass().getSimpleName();
+            log.warn("OAuth2 login failed: reason={}, message={}, callback={}",
+                    reason, exception.getMessage(), request.getRequestURL(), exception);
+            response.sendRedirect(props.frontendBaseUrl() + "/login?error=oauth&reason="
+                    + URLEncoder.encode(reason, StandardCharsets.UTF_8));
+        };
+
+        CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepository.setCookieCustomizer(cookie -> cookie.sameSite(capitalize(cookieSameSite)).secure(cookieSecure));
 
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/public/**", "/api/csrf", "/api/fonts").permitAll()
@@ -116,6 +141,11 @@ public class SecurityConfig {
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         res.setCharacterEncoding("UTF-8");
         objectMapper.writeValue(res.getWriter(), ErrorResponse.of(code));
+    }
+
+    private static String capitalize(String sameSite) {
+        String s = sameSite == null || sameSite.isBlank() ? "lax" : sameSite.trim().toLowerCase();
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private static String pathOf(HttpServletRequest request) {

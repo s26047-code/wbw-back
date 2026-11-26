@@ -28,7 +28,8 @@ services:
     environment:
       DB_URL: jdbc:mysql://db:3306/wbw?serverTimezone=UTC&characterEncoding=UTF-8
     ports:
-      - "127.0.0.1:8080:8080"   # 외부 공개는 앞단의 HTTPS 리버스 프록시(Nginx/Caddy)를 통해서만
+      # APP_BIND=0.0.0.0 이면 같은 네트워크(학교 내부망)에서 접속 가능, 127.0.0.1 이면 서버 안에서만
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:8080"
 
 volumes:
   db-data:

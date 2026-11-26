@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  * 지원 서식 (프론트엔드 TipTap 속성 이름과 일치해야 함):
  * <ul>
  *   <li>노드: paragraph, heading(level 1~3), blockquote, bulletList, orderedList, listItem, codeBlock, horizontalRule, hardBreak</li>
- *   <li>문단 속성: textAlign(left|center|right|justify), lineHeight(숫자, 배수), paragraphSpacing(숫자, em, 문단 아래 간격)</li>
+ *   <li>문단 속성: textAlign(left|center|right|justify), lineHeight(숫자, 배수), paragraphSpacing(숫자, em, 문단 아래 간격),
+ *       pageBreak(true면 이 문단 다음에서 새 쪽)</li>
  *   <li>마크: bold, italic, underline, strike, textStyle(fontFamily, fontSize, letterSpacing, color)</li>
  * </ul>
  */
@@ -58,7 +59,14 @@ public class TiptapHtmlRenderer {
         switch (type) {
             case "text" -> renderText(node, sb);
             case "hardBreak" -> sb.append("<br/>");
-            case "paragraph" -> block("p", paragraphStyle(attrs), node, sb, true);
+            case "paragraph" -> {
+                if (isPageBreak(attrs) && !hasContent(node)) {
+                    // 내용 없는 쪽 나눔 문단: 빈 줄을 남기지 않고 다음 쪽으로 넘긴다
+                    sb.append("<div class=\"page-break\"></div>");
+                } else {
+                    block("p", paragraphStyle(attrs), node, sb, true);
+                }
+            }
             case "heading" -> {
                 int level = Math.max(1, Math.min(3, attrs.path("level").asInt(1)));
                 block("h" + level, paragraphStyle(attrs), node, sb, true);
@@ -106,7 +114,21 @@ public class TiptapHtmlRenderer {
         if (spacing != null) {
             style.append("margin-bottom:").append(fmt(spacing)).append("em;");
         }
+        if (isPageBreak(attrs)) {
+            style.append("page-break-after:always;");
+        }
         return style.toString();
+    }
+
+    /** attrs.pageBreak 가 true(또는 "true")이면 이 문단 다음에서 새 쪽으로 넘긴다. */
+    static boolean isPageBreak(JsonNode attrs) {
+        JsonNode v = attrs == null ? null : attrs.get("pageBreak");
+        return v != null && (v.asBoolean(false) || "true".equalsIgnoreCase(v.asText()));
+    }
+
+    private static boolean hasContent(JsonNode node) {
+        JsonNode children = node.get("content");
+        return children != null && children.isArray() && !children.isEmpty();
     }
 
     private void renderText(JsonNode node, StringBuilder sb) {

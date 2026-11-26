@@ -62,6 +62,23 @@ class TiptapHtmlRendererTest {
     }
 
     @Test
+    void pageBreakParagraphStartsNewPage() throws Exception {
+        String html = render("""
+                {"type":"doc","content":[
+                  {"type":"paragraph","attrs":{"pageBreak":true},"content":[{"type":"text","text":"1장 끝"}]},
+                  {"type":"paragraph","attrs":{"pageBreak":true}},
+                  {"type":"paragraph","attrs":{"pageBreak":"true"},"content":[{"type":"text","text":"2장 끝"}]},
+                  {"type":"paragraph","attrs":{"pageBreak":false},"content":[{"type":"text","text":"보통"}]}
+                ]}
+                """);
+        assertThat(html).isEqualTo(
+                "<p style=\"page-break-after:always;\">1장 끝</p>"
+                        + "<div class=\"page-break\"></div>"
+                        + "<p style=\"page-break-after:always;\">2장 끝</p>"
+                        + "<p>보통</p>");
+    }
+
+    @Test
     void cssLengthValidation() throws Exception {
         assertThat(TiptapHtmlRenderer.cssLength(mapper.readTree("18"), "px", 6, 96, 6, 72, 0.3, 6)).isEqualTo("18px");
         assertThat(TiptapHtmlRenderer.cssLength(mapper.readTree("\"12pt\""), "px", 6, 96, 6, 72, 0.3, 6)).isEqualTo("12pt");
