@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  * 지원 서식 (프론트엔드 TipTap 속성 이름과 일치해야 함):
  * <ul>
  *   <li>노드: paragraph, heading(level 1~3), blockquote, bulletList, orderedList, listItem, codeBlock, horizontalRule, hardBreak</li>
- *   <li>문단 속성: textAlign(left|center|right|justify), lineHeight(숫자, 배수), paragraphSpacing(숫자, em, 문단 아래 간격),
+ *   <li>문단 속성: textAlign(left|center|right|justify), lineHeight(1.6 배수 / "160%" / "28px"),
+ *       paragraphSpacing(0.8 = em, 문단 아래 간격 / "12px"),
  *       pageBreak(true면 이 문단 다음에서 새 쪽)</li>
  *   <li>마크: bold, italic, underline, strike, textStyle(fontFamily, fontSize, letterSpacing, color)</li>
  * </ul>
@@ -106,18 +107,77 @@ public class TiptapHtmlRenderer {
         if (align.equals("left") || align.equals("center") || align.equals("right") || align.equals("justify")) {
             style.append("text-align:").append(align).append(';');
         }
-        Double lineHeight = number(attrs.get("lineHeight"), 0.8, 4.0);
+        String lineHeight = lineHeightCss(attrs.get("lineHeight"));
         if (lineHeight != null) {
-            style.append("line-height:").append(fmt(lineHeight)).append(';');
+            style.append("line-height:").append(lineHeight).append(';');
         }
-        Double spacing = number(attrs.get("paragraphSpacing"), 0.0, 5.0);
+        String spacing = paragraphSpacingCss(attrs.get("paragraphSpacing"));
         if (spacing != null) {
-            style.append("margin-bottom:").append(fmt(spacing)).append("em;");
+            style.append("margin-bottom:").append(spacing).append(';');
         }
         if (isPageBreak(attrs)) {
             style.append("page-break-after:always;");
         }
         return style.toString();
+    }
+
+    /**
+     * 줄 간격: 1.6 / "1.6" (배수, 권장) · "160%" (→ 1.6) · "28px" · "1.6em" 을 받는다.
+     * 범위를 벗어나거나 해석할 수 없으면 null (사용자 설정 기본값 적용).
+     */
+    static String lineHeightCss(JsonNode value) {
+        Length len = parseLength(value);
+        if (len == null) {
+            return null;
+        }
+        return switch (len.unit()) {
+            case "", "em" -> len.value() >= 0.8 && len.value() <= 4.0 ? fmt(len.value()) : null;
+            case "%" -> len.value() >= 80 && len.value() <= 400 ? fmt(len.value() / 100.0) : null;
+            case "px" -> len.value() >= 6 && len.value() <= 200 ? fmt(len.value()) + "px" : null;
+            case "pt" -> len.value() >= 5 && len.value() <= 150 ? fmt(len.value()) + "pt" : null;
+            default -> null;
+        };
+    }
+
+    /**
+     * 문단 간격(문단 아래 여백): 0.8 (em, 권장) · "0.8em" · "12px" · "9pt" 를 받는다.
+     * 단위 없는 숫자는 5 이하면 em, 5보다 크면 px 로 해석한다.
+     */
+    static String paragraphSpacingCss(JsonNode value) {
+        Length len = parseLength(value);
+        if (len == null) {
+            return null;
+        }
+        String unit = len.unit();
+        if (unit.isEmpty()) {
+            unit = len.value() <= 5 ? "em" : "px";
+        }
+        return switch (unit) {
+            case "em" -> len.value() >= 0 && len.value() <= 5 ? fmt(len.value()) + "em" : null;
+            case "px" -> len.value() >= 0 && len.value() <= 200 ? fmt(len.value()) + "px" : null;
+            case "pt" -> len.value() >= 0 && len.value() <= 150 ? fmt(len.value()) + "pt" : null;
+            default -> null;
+        };
+    }
+
+    record Length(double value, String unit) {
+    }
+
+    private static final Pattern LENGTH = Pattern.compile("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*(px|pt|em|rem|%)?\\s*$");
+
+    static Length parseLength(JsonNode value) {
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (value.isNumber()) {
+            return new Length(value.asDouble(), "");
+        }
+        Matcher m = LENGTH.matcher(value.asText("").toLowerCase(Locale.ROOT));
+        if (!m.matches()) {
+            return null;
+        }
+        String unit = m.group(2) == null ? "" : m.group(2);
+        return new Length(Double.parseDouble(m.group(1)), unit.equals("rem") ? "em" : unit);
     }
 
     /** attrs.pageBreak 가 true(또는 "true")이면 이 문단 다음에서 새 쪽으로 넘긴다. */
