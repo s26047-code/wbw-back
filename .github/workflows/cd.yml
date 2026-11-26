@@ -1,0 +1,134 @@
+name: CD (개발 서버)
+
+# develop에 푸시(머지)되면 테스트 → 학교 서버(gsmsv) 배포 → Discord 알림
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false   # 배포 도중에 끊기지 않도록 순서대로 실행
+
+env:
+  DEPLOY_HOST: ssh.gsmsv.site
+  DEPLOY_PORT: '24109'
+  DEPLOY_USER: ubuntu
+  # 서버 SSH 호스트 키 지문 (중간자 공격 방지). 서버가 바뀌면 함께 갱신
+  DEPLOY_HOST_FINGERPRINT: SHA256:dLrGBsP0bLxR91ipLkMXJhYpvsmUtL6qb/zTmspmUPQ
+
+jobs:
+  build:
+    name: 테스트 & 빌드
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 테스트 & 실행 파일 빌드
+        run: |
+          chmod +x gradlew
+          ./gradlew test bootJar --no-daemon
+
+      - name: 테스트 보고서 업로드 (실패 시)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: build/libs/wbw-backend-0.1.0.jar
+          retention-days: 3
+
+  deploy:
+    name: 서버 배포
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      public_url: ${{ steps.url.outputs.public_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: dist
+
+      - name: SSH 설정
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$SSH_KEY" ]; then echo "::error::DEPLOY_SSH_KEY 시크릿이 없습니다."; exit 1; fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$DEPLOY_PORT" -t ed25519 "$DEPLOY_HOST" > /tmp/host_key 2>/dev/null
+          if ! ssh-keygen -lf /tmp/host_key | grep -q "$DEPLOY_HOST_FINGERPRINT"; then
+            echo "::error::서버 호스트 키 지문이 다릅니다. 서버가 바뀌었는지 확인하세요."; exit 1
+          fi
+          cat /tmp/host_key >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<CFG
+          Host deploy
+            HostName $DEPLOY_HOST
+            Port $DEPLOY_PORT
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            ServerAliveInterval 30
+          CFG
+
+      - name: 업로드 & 재시작
+        run: |
+          ssh deploy 'mkdir -p ~/wbw/upload'
+          scp dist/wbw-backend-0.1.0.jar deploy/wbw.service deploy/install.sh deploy:~/wbw/upload/
+          ssh deploy 'bash ~/wbw/upload/install.sh'
+
+      - name: 공개 주소 확인
+        id: url
+        run: |
+          URL=$(ssh deploy 'cat ~/wbw/public-url.txt 2>/dev/null || true')
+          echo "public_url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: SSH 키 정리
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+  notify:
+    name: Discord 알림
+    needs: [build, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 알림 전송
+        env:
+          # 배포 전용 채널(dev)이 있으면 그쪽으로, 없으면 back 채널로
+          WEBHOOK_URL: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL || secrets.DISCORD_WEBHOOK_URL }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          PUBLIC_URL: ${{ needs.deploy.outputs.public_url }}
+        run: |
+          if [ "$BUILD_RESULT" = "failure" ]; then
+            bash .github/scripts/discord-notify.sh failure "개발 서버 배포 중단 (테스트 실패)"
+          elif [ "$DEPLOY_RESULT" = "success" ]; then
+            EXTRA=""
+            [ -n "$PUBLIC_URL" ] && EXTRA="Swagger: ${PUBLIC_URL}/swagger-ui.html"
+            bash .github/scripts/discord-notify.sh success "개발 서버 배포 완료" "$EXTRA"
+          elif [ "$DEPLOY_RESULT" = "failure" ]; then
+            bash .github/scripts/discord-notify.sh failure "개발 서버 배포 실패"
+          else
+            bash .github/scripts/discord-notify.sh cancelled "개발 서버 배포 취소"
+          fi
