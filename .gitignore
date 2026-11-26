@@ -8,3 +8,5 @@ out/
 *.log
 fonts/*.ttf
 fonts/*.otf
+.env.*
+!.env.example

@@ -1,0 +1,14 @@
+[Unit]
+Description=wbw backend
+After=network.target mysql.service
+Requires=mysql.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/wbw
+ExecStart=/usr/bin/java -Xms256m -Xmx640m -Dfile.encoding=UTF-8 -jar /home/ubuntu/wbw/app.jar
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

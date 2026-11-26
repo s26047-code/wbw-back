@@ -1,5 +1,8 @@
 # PDF용 한글 글꼴
 
+> **리눅스 서버**는 `sudo apt install fonts-nanum` 만 하면 나눔명조·나눔고딕(일반/굵게)이 자동으로 사용됩니다. (배포 스크립트가 자동 설치)
+> PDF에는 고정 굵기 TTF만 사용합니다. WOFF2·가변 글꼴·OTF/TTC(fonts-noto-cjk)는 한글이 깨질 수 있어 쓰지 않습니다.
+
 PDF 내보내기에서 한글을 표시하려면 이 폴더에 아래 TTF 파일을 넣어야 합니다.
 모두 SIL Open Font License(무료, 재배포 가능) 글꼴이며 Google Fonts에서 받을 수 있습니다.
 최소 1개(권장: Noto Serif KR)만 있어도 한글이 표시됩니다.

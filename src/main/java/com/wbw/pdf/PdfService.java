@@ -77,6 +77,7 @@ public class PdfService {
                 .append("pre{white-space:pre-wrap;font-size:0.9em;background:#F4F1EA;padding:0.6em;}")
                 .append("hr{border:none;border-top:1px solid #CFC6B8;margin:1.2em 0;}")
                 .append("ul,ol{margin:0 0 1em 0;padding-left:1.5em;}")
+                .append("div.page-break{page-break-after:always;height:0;margin:0;padding:0;}")
                 .append("</style></head><body>");
         if (opts.titleIncluded() && !doc.getTitle().isEmpty()) {
             html.append("<h1 class=\"doc-title\">").append(TiptapHtmlRenderer.escapeText(doc.getTitle())).append("</h1>");

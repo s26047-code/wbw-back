@@ -36,6 +36,14 @@ server: {
 ```
 이 경우 구글 콘솔의 승인된 리디렉션 URI에 `http://localhost:5173/login/oauth2/code/google` 도 등록해야 합니다.
 
+**학교 서버(개발 서버)에 붙을 때**는 target 만 바꾸면 됩니다. (학교 내부망/VPN 연결 필요)
+```js
+const API = 'http://10.0.0.203:8080'
+server: { proxy: { '/api': API, '/oauth2': API, '/login/oauth2': API, '/swagger-ui': API, '/v3/api-docs': API } }
+```
+⚠️ `changeOrigin` 은 **켜지 마세요**(기본값 false 유지). Host 헤더가 `localhost:5173` 으로 유지되어야 구글 로그인이 동작합니다.
+(구글은 `localhost` 가 아닌 IP 주소로의 로그인 리디렉션을 허용하지 않습니다)
+
 ### 에러 응답 형식 (공통)
 ```json
 {
@@ -247,6 +255,7 @@ PATCH 본문 (보낸 값만 변경): `enabled`(bool), `password`(설정·변경)
 | 줄 간격 | node `paragraph`/`heading`, attr `lineHeight` | 숫자 배수 `1.8` |
 | 문단 간격 | node `paragraph`/`heading`, attr `paragraphSpacing` | 숫자 em `1.2` (문단 아래 여백) |
 | 정렬 | node attr `textAlign` | left / center / right / justify |
+| 쪽 나눔 (PDF) | node `paragraph`, attr `pageBreak` | `true` 면 PDF에서 이 문단 다음부터 새 쪽. 내용 없는 문단이면 빈 줄 없이 쪽만 넘김 |
 
 지원 노드: paragraph, heading(1~3), blockquote, bulletList, orderedList, listItem, codeBlock, horizontalRule, hardBreak.
 문단 속성이 없으면 사용자 설정(`/api/settings`)의 값이 기본으로 적용됩니다.

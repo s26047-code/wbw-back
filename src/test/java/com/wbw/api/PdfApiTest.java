@@ -19,7 +19,7 @@ class PdfApiTest extends ApiTestSupport {
         JsonNode content = mapper.readTree("""
                 {"type":"doc","content":[
                   {"type":"paragraph","attrs":{"lineHeight":2},"content":[{"type":"text","text":"Hello <PDF> & world","marks":[{"type":"bold"}]}]},
-                  {"type":"paragraph"},
+                  {"type":"paragraph","attrs":{"pageBreak":true}},
                   {"type":"paragraph","content":[{"type":"text","text":"second","marks":[{"type":"textStyle","attrs":{"fontSize":"20px","letterSpacing":"0.1em"}}]}]}
                 ]}
                 """);
